@@ -78,10 +78,6 @@ main:
     # ----- FOR TESTING ----- #
 
 
-    # Fill array
-    j fillSpace
-    fillSpaceReturn1:
-
     # Adding
     la $a1, BigInt1
     la $a2, BigInt2
@@ -220,8 +216,6 @@ bigIntAddition:
     move $t0, $t8                           # make i = largest_num_of_digits
 
     additionLoop:
-        blt $t0, $zero, additionLoopExit          # loop exit condition (if i == 0)
-        #beqz $t0, additionLoopExit
         # Get the value of BigInt1[i]
         add $t3, $t1, $t0
         lb $t5, 0($t3)
@@ -234,65 +228,17 @@ bigIntAddition:
         # ----- HOPEFULLY IT FILLS IN ZERO FOR THE REST OF THE DATA ---- #
         # ----- IF NOT I MIGHT HAVE TO ADD THOSE ZEROS ----- #
 
-        # get value at i from new big int
-        la $a1, BigIntSum
-        add $t3, $a1, $t0                   # curr_addr_sum = base_addr_sum + i
-        lb $t8 0($t3)
-
-        add $t8, $t8, $t5                   # t8 += t5
-        add $t8, $t6, $t8                   # t8 += t6, so: t8 = t8 + t5 + t6
-
-        li $s1, 10
-        bge $t8, $s1, carryOperation
-        carryOperationReturn:
-
-        # For newly created big int
-        sb $t8, 0($t3)                      # save the sumation of BigInt1 at i, and BigInt2 at i to BigIntSum at i
-
-        # ADD the carry
-        beqz $t0, skipAddingCarray          # if the highest two are at that 40 size limit.
-
-
-        addi $t4, $t0, -1                   # t4 = i - 1
-        add $t3, $a1, $t4                   # left_addr = base_addr_sum + (i - 1)
-        lb $t4 0($t3)                        # load the left_addr's value into a temp reg
-        add $t4, $t4, $t9                   # if carried then t9 = 1, thus t4++, if not carried then t9 = 0, thus t4 = t4
-        sb $t4 0($t3)                        # save the modifications to left_addr_value
-
-        skipAddingCarray:
-
-        li $t9, 0                           # reset the carry
+        add $t8, $t5, $t6
         
-
-        # ----- FOR TESTING ----- #
-        li $v0, 4
-        la $a0, newLine
-        syscall
-
-        li $v0, 1
-        move $a0, $t8
-        syscall
-        # ----- FOR TESTING ----- #
-
+        
         addi $t0, $t0, -1
-
         j additionLoop
-    additionLoopExit:
-
-    # for the last one
-
-    
 
 jr $ra
 
 twoLargerThanOne:
     move $t8, $t9
     j twoLargerThanOneReturn
-
-carryOperation:
-    addi $t8, $t8, -10
-    li $t9, 1
-    j carryOperationReturn
 
 
 endProgram:
