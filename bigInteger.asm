@@ -4,15 +4,15 @@ BIG_INT_MAX_SIZE = 41                       # 40 digits + size in the first spot
 RETURN_VALUES_MAX_SIZE = 41             
 
 # Data and variables
-#BigInt1: .word 0                            # data type
-#         .space BIG_INT_MAX_SIZE            # length of it
+BigInt1: .word 0                            # data type
+         .space BIG_INT_MAX_SIZE            # length of it
 
-BigInt1: .word 4 8 3 9 1
+#BigInt1: .word 4 8 3 9 1
 
-#BigInt2: .word 0
-#         .space BIG_INT_MAX_SIZE                  
+BigInt2: .word 0
+         .space BIG_INT_MAX_SIZE                  
 
-BigInt2: .word 4 8 3 9 2
+#BigInt2: .word 4 8 3 9 2
 
 Summation: .word 0
            .space RETURN_VALUES_MAX_SIZE    # for overflow reasons
@@ -54,9 +54,9 @@ main:
     syscall
 
     # Call conversion function
-    #la $a1, buffer
-    #la $a2, BigInt1
-    #jal string_conversion_to_int
+    la $a1, buffer
+    la $a2, BigInt1
+    jal string_conversion_to_int
 
     # Get the second number
     li $v0, 4
@@ -70,23 +70,23 @@ main:
     syscall
 
     # Call conversion function for a second time
-    #la $a1, buffer
-    #la $a2, BigInt2
-    #jal string_conversion_to_int
+    la $a1, buffer
+    la $a2, BigInt2
+    jal string_conversion_to_int
 
     # Addition of the two BigInt structs
-    #la $a1, BigInt1
-    #la $a2, BigInt2
-    #la $a3, Summation
-    #jal bigint_add
-#
-    ## Print Additon
-    #li $v0, 4
-    #la $a0, summationMessage
-    #syscall
-#
-    #la $a1, Summation
-    #jal print_BigInt    
+    la $a1, BigInt1
+    la $a2, BigInt2
+    la $a3, Summation
+    jal bigint_add
+
+    # Print Additon
+    li $v0, 4
+    la $a0, summationMessage
+    syscall
+
+    la $a1, Summation
+    jal print_BigInt    
 
     # Subtraction
     #la $a1, BigInt1
@@ -198,57 +198,74 @@ main:
 
     j endProgram
 
-
 string_conversion_to_int:
-    # t0 = i,
-    # s0 = struct_addr
+    # a1 = buffer address, a2 = BigInt address
+    # Converts string input to digit array stored in reverse order
 
-    addi $sp, $sp, -8
-    sw $ra 0($sp)                                # save return address to stack
+    
+    addi $sp, $sp, -12
+    sw $ra, 0($sp)
     sw $s0, 4($sp)
+    sw $s1, 8($sp)
 
-    move $t0, $a1                                # while it is the address of the string, since a string is an arr of char, it is also pointing at the first index of the char array. And since we are only going up by one, then add on in each iteration to register
-    move $s0, $a2
+    move $s0, $a1        # Buffer address
+    move $s1, $a2        # BigInt address
 
-    # Find the end of the buffer string
-    find_buffer_end:
-        # move $t3, $a1, $t0
+    # First pass: find the end and count digits
+    move $t0, $s0        # Start at beginning of buffer
+    li $t2, 0            # Digit counter
+
+    count_digits:
         lb $t3, 0($t0)
+        # Check for end of input
+        beq $t3, 0x0A, done_counting    # '\n'
+        beq $t3, 0x00, done_counting    # '\0'
+        beq $t3, 0x0D, done_counting    # '\r'
+        beq $t3, 0x20, next_char        # Skip spaces
         
-        beq $t3, 0x0A, found_buffer_end      # exit loop if t3 == '\n' 
-        beq $t3, 0x00, found_buffer_end      # exit loop if t3 == 'NULL'
+        # Check if it's a valid digit
+        blt $t3, 48, next_char          # Less than '0'
+        bgt $t3, 57, next_char          # Greater than '9'
         
-        addi $t0, $t0, 1
-        j find_buffer_end
-
-    found_buffer_end:
-        addi $t0, $t0, -1                   # move one over, i.e. back to the actual last digit 
-
-        # Convert the digits into rever order
-        addi $t1, $s0, 4
-        li $t2, 0
-
-    conversion_loop:
-        blt $t0, $a1, conversion_finished
-        lb $t3, 0($t0)
-
-        # Convert to the ascii equivalent
-        addi $t3, $t3, -48                  # from chart to digit
-        sb $t3, 0($t1)
-        addi $t1, $t1, 1
+        # It's a digit, count it
         addi $t2, $t2, 1
+        
+    next_char:
+        addi $t0, $t0, 1
+        j count_digits
 
-        addi $t0, $t0, -1
-        j conversion_loop
+    done_counting:
+        # Store the size
+        sw $t2, 0($s1)
+        
+        # Now convert: start from END of string, store in beginning of array
+        addi $t0, $t0, -1               # Point to last char before newline
+        addi $t1, $s1, 4                # Point to first storage position
+        
+    convert_loop:
+        blt $t0, $s0, conversion_done   # If we've gone before start of buffer
+        lb $t3, 0($t0)
+        
+        # Skip non-digits
+        blt $t3, 48, skip_this_char
+        bgt $t3, 57, skip_this_char
+        
+        # Convert ASCII to digit value (0-9)
+        addi $t3, $t3, -48
+        sb $t3, 0($t1)                  # Store in BigInt array
+        addi $t1, $t1, 1                # Move to next position
+        
+    skip_this_char:
+        addi $t0, $t0, -1               # Move backwards in buffer
+        j convert_loop
 
-    conversion_finished:
-        sw $t2, 0($s0)                      # Store the length within the struct
-
+    conversion_done:
+        lw $s1, 8($sp)
         lw $s0, 4($sp)
         lw $ra, 0($sp)
-        addi $sp, $sp, 8
+        addi $sp, $sp, 12
+        jr $ra
 
-    jr $ra
 
 # Addition
 bigint_add:
@@ -481,12 +498,6 @@ comparison:
 
     # Go left to right, cases covered (struct1 > struct2), (struct1 < struct2), (struct1 == struct2)
     # Loop to check when the struct_1_num_digits == struct_2_num_digits
-
-
-    # ------------ FOR TESTING --------------- #
-
-    # ------------ FOR TESTING --------------- #
-
 
     comparison_loop:
         # Condition when they are equal, than exit the loop
