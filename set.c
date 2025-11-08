@@ -12,7 +12,7 @@ struct IntegerSet {
 // Zeros out the array
 void constructor (struct IntegerSet * set_pointer) {
     int i = 0;
-    const unsigned int ARRAY_SIZE = INTEGERSET_ARRAY_SIZE;
+    const unsigned int ARRAY_SIZE = INTEGERSET_ARRAY_SIZE - 1;
 
     while (true) {
         if (i > ARRAY_SIZE) {
