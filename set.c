@@ -23,7 +23,7 @@ void constructor (struct IntegerSet * set_pointer) {
     }
 }
 
-unsigned int which_array_to_modify () {
+unsigned int which_array_to_choose () {
     unsigned int array_to_modify;
 
     // Ask the user which array would they like to modify.
@@ -92,6 +92,36 @@ void print_set (struct IntegerSet * set_pointer) {
     }
 }
 
+void equals (struct IntegerSet * array_1_pointer, struct IntegerSet * array_2_pointer) {
+    int i = 0;
+    const unsigned int LAST_INDEX = INTEGERSET_ARRAY_SIZE - 1;
+
+    // unsigned int array_1_value;
+    // unsigned int array_2_value;
+
+    // Loop over
+    while (true) {
+        // Conditional to exit loop
+        if (i > LAST_INDEX) {break;}
+
+
+        // Get the values at the index's of i
+        unsigned int array_1_value = array_1_pointer -> a[i]; 
+        unsigned int array_2_value = array_2_pointer -> a[i];
+
+        // Compare the values
+        if (array_1_value != array_2_value) {
+            printf("False\n");
+            return;
+        }
+
+        // Increment iterator
+        i = i + 1;
+    }
+
+    printf("True\n");
+    return;
+}
 
 int main () {
     struct IntegerSet array_1;
@@ -128,7 +158,7 @@ int main () {
                 // Case 1, 2, and 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, where 3 skips that action.
                 // The default case (when not 1, 2, nor 3) it repeates the array_choice. Still within insert element action choice.
                 
-                array_choice = which_array_to_modify();
+                array_choice = which_array_to_choose();
 
                 switch (array_choice) {
                     case 1:
@@ -152,7 +182,7 @@ int main () {
                 // Case 1, 2, 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, where 3 skips that action.
                 // The default case (when not 1, 2, nor 3) repeats the array_choice. Still within delete element action choice.
                 
-                array_choice = which_array_to_modify();
+                array_choice = which_array_to_choose();
 
                 switch (array_choice) {
                     case 1:
@@ -175,7 +205,7 @@ int main () {
                 // Case 1, 2, 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, while 3 does no actions.
                 // The default case (when not 1, 2, nor 3) repeats the array_choice, but still within the print action choice.
                 
-                array_choice = which_array_to_modify();
+                array_choice = which_array_to_choose();
 
                 switch (array_choice) {
                     case 1:
@@ -194,6 +224,9 @@ int main () {
 
         // (6) Equality Check
             // Make sure to check if the either set has been modified, maybe?
+        if (operation_choice == 6) {
+            equals(&array_1, &array_2);
+        }
         // TODO
 
         
