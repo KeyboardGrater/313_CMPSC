@@ -39,9 +39,7 @@ unsigned int which_array_to_modify () {
 // Get the user input of which number they would like to modify (insert or delete).
 unsigned int number_to_modify () {  
     int user_number;
-    const unsigned int ARRAY_SIZE = INTEGERSET_ARRAY_SIZE; 
-    const unsigned int LAST_INDEX_OF_ARRAY = ARRAY_SIZE - 1;
-    
+    const unsigned int LAST_INDEX_OF_ARRAY = INTEGERSET_ARRAY_SIZE - 1;
     
     /// ----------------- Might want to add something here just in case if the user wants to exit the program at this stage.
 
@@ -79,6 +77,21 @@ void delete_element (struct IntegerSet * set_pointer) {
     set_pointer -> a[index] = 0;
 }
 
+void print_set (struct IntegerSet * set_pointer) {
+    int i = 0;
+    const unsigned int LAST_INDEX_OF_ARRAY = INTEGERSET_ARRAY_SIZE - 1;
+
+    // Loop over set and print at index
+    while (true) {
+        if (i > LAST_INDEX_OF_ARRAY) {break;}        // Condition to check if we can exit the loop yet
+
+        unsigned int value_at_index = set_pointer -> a[i];
+        printf("%u", value_at_index);                          // Could probally be a byte.
+
+        i = i + 1;                          // iterate through loop
+    }
+}
+
 
 int main () {
     struct IntegerSet array_1;
@@ -114,7 +127,9 @@ int main () {
             while (true) {
                 // Case 1, 2, and 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, where 3 skips that action.
                 // The default case (when not 1, 2, nor 3) it repeates the array_choice. Still within insert element action choice.
+                
                 array_choice = which_array_to_modify();
+
                 switch (array_choice) {
                     case 1:
                         insert_element(&array_1);
@@ -135,8 +150,10 @@ int main () {
             
             while (true) {
                 // Case 1, 2, 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, where 3 skips that action.
-                // The default case (when not 1, 2, nor 3) it repeates the array_choice. Still within insert element action choice.
+                // The default case (when not 1, 2, nor 3) repeats the array_choice. Still within delete element action choice.
+                
                 array_choice = which_array_to_modify();
+
                 switch (array_choice) {
                     case 1:
                         delete_element(&array_1);
@@ -153,7 +170,27 @@ int main () {
         }
 
         // (5) Print Set
-        // TODO
+        else if (operation_choice == 5) {
+            while (true) {
+                // Case 1, 2, 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, while 3 does no actions.
+                // The default case (when not 1, 2, nor 3) repeats the array_choice, but still within the print action choice.
+                
+                array_choice = which_array_to_modify();
+
+                switch (array_choice) {
+                    case 1:
+                        print_set(&array_1);
+                        goto repeat_operation_choice;
+                    case 2:
+                        print_set(&array_2);
+                        goto repeat_operation_choice;
+                    case 3:
+                        goto repeat_operation_choice;
+                    default:
+                        break;
+                }
+            }
+        }
 
         // (6) Equality Check
             // Make sure to check if the either set has been modified, maybe?
