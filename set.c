@@ -135,21 +135,41 @@ void union_of (struct IntegerSet * array_1_pointer, struct IntegerSet * array_2_
         unsigned int array_1_value = array_1_pointer -> a[i];
         unsigned int array_2_value = array_2_pointer -> a[i];
 
-        // Add them togather
-        union_value = array_1_value + array_2_value;
-
         // Case 0 = 0 + 0, Case 1 = 1 + 0 or 0 + 1, Case 2 = 1 + 1. Don't have to do any work in case 0 or 1, only 2
         // Case 2: (1 + 1) = 2
-        if (union_value == 2) {union_value = union_value - 1;}
         
-        // Save the union to the index i of union array
-        union_array.a[i] = union_value;
+        union_array.a[i] = array_1_value || array_2_value;
 
         i = i + 1;                          // iterator 
     }
 
     // Call print function with this union array as the argument
     print_set(&union_array);
+}
+
+void intersection_of (struct IntegerSet * array_1_pointer, struct IntegerSet * array_2_pointer) {
+    int i = 0;
+    unsigned int LAST_INDEX_OF_ARRAY = INTEGERSET_ARRAY_SIZE - 1;
+    struct IntegerSet intersection_array;
+    unsigned int intersection_value;
+
+    // Loop 
+    while (true) {
+        if (i > LAST_INDEX_OF_ARRAY) {break;}                   // Checks to see if we passed the last index
+
+        // Get the values at the index
+        unsigned int array_1_value = array_1_pointer -> a[i];
+        unsigned int array_2_value = array_2_pointer -> a[i];
+
+        // Intersect the two values         
+        // Case 0: 0 AND 0 = 0, Case 1: 0 AND 1 or 1 AND 0 = 0, Case 2: 1 AND 1 = 1
+        
+        intersection_array.a[i] = array_1_value && array_2_value;
+
+        i = i + 1;                          // iterator
+    }
+
+    print_set(&intersection_array);
 }
 
 
@@ -182,6 +202,9 @@ int main () {
 
         // If option 2
         // TODO
+        if (operation_choice == 2) {
+            intersection_of(&array_1, &array_2);
+        }
 
         // Insert
         if (operation_choice == 3) {
