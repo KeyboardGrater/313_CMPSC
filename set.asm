@@ -5,7 +5,7 @@ INTEGERSET_ARRAY_SIZE = 100                 # enum {INTEGERSET_ARRAY_SIZE = 100}
 # struct IntegerSet {int a[INTEGERSET_ARRAY_SIZE]; };   # int * 100 = 4 * 100 = 400 bytes
 
 # jump tables
-operation_switch: .word case_1 case_2 case_3 case_4 case_5 case_6 case_7
+operation_switch: .word case_1, case_2, case_3, case_4, case_5, case_6, case_7
 
 # strings
 operation_prompt: .asciiz "Please pick a operation to perform.\n1: Union of two sets\n2: Intersection of two sets\n3: Insertion on a set\n4: Deletion on a set\n5: Print a set\n6: Check to see if two sets are equal\n7: Exit\n\n"
@@ -64,33 +64,65 @@ main:
         syscall
 
         # scanf("%u", &operation_choice);
-        li $v0, 1
+        li $v0, 5
         syscall
         move $t1, $v0
 
         # switch (operation_choice)
         
         # First check if the default condition was reached (bound checking)
-        blt $t0, $zero, user_choices_loop             # (operation_choice < 0) Get input again
+        blt $t1, $zero, user_choices_loop             # (operation_choice < 0) Get input again
         
         li $t3, 7
         bgt $t1, $t3, user_choices_loop               # (operation_choice > 7)
 
         # Jump table lookup
 
-        # Find location of choice
+        # Adjust for zero-based indexing (user enters 1-7, but array is only 0-6)
+        addi $t1, $t1, -1
+
+        # Find location of choice   
         la $t3, operation_switch                      # base_addr of operation_switch table
         mul $t1, $t1, 4                               # t1 = offset = t1 * sizeOf(int)
         add $t3, $t3, $t1                             # t3 = base_addr + offset = operation_switch_base_addr + (operation_choice * sizeof(int))
         
+        # Go to choices case
         lw $t3, 0($t3)                                # Load the value at the address of t3 into t3, which is the address of the case
         jr $t3                                        # jump registers to the value of t3, which is the address of the case
 
-        
-
-
+        # Union
+        case_1:
+            # TODO
+            j user_choices_loop
+        # Intersection
+        case_2:
+            # TODO
+            j user_choices_loop
+        # Insert
+        case_3:
+            # TODO
+            j user_choices_loop
+        # Delete
+        case_4:
+            # TODO 
+            j user_choices_loop
+        # Print
+        case_5:
+            # TODO
+            j user_choices_loop
+        # Equals
+        case_6:
+            # TODO
+            j user_choices_loop
+        # Exit
+        case_7:
+            j user_choices_loop_exit
+        # Default
+        # --------------- Might not need this, because default is handel above ------------
         j user_choices_loop
 
+    user_choices_loop_exit:         # Not nessicary, but just going to leave it here
+    
     j endProgram
 
 constructor:
