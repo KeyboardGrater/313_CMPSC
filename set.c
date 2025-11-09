@@ -194,99 +194,95 @@ int main () {
         scanf("%u", &operation_choice);
         
         // Check for 7 (i.e. if user wants to exit loop)
-        if (operation_choice == 7) {break;}
-
-        if (operation_choice == 1) {
-            union_of(&array_1, &array_2);
-        }
-
-        // If option 2
-        // TODO
-        if (operation_choice == 2) {
-            intersection_of(&array_1, &array_2);
-        }
-
-        // Insert
-        if (operation_choice == 3) {
+        switch (operation_choice) {
             
-            while (true) {
-                // Case 1, 2, and 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, where 3 skips that action.
-                // The default case (when not 1, 2, nor 3) it repeates the array_choice. Still within insert element action choice.
-                
-                array_choice = which_array_to_choose();
-
-                switch (array_choice) {
-                    case 1:
-                        insert_element(&array_1);
-                        goto repeat_operation_choice;
-                    case 2:
-                        insert_element(&array_2);
-                        goto repeat_operation_choice;
-                    case 3:
-                        goto repeat_operation_choice;
-                    default:
-                        break;
-                }
-            }
-        }
-
-        // Delete
-        else if (operation_choice == 4) {
+            case 1:
+                union_of(&array_1, &array_2);
+                break;
             
-            while (true) {
-                // Case 1, 2, 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, where 3 skips that action.
-                // The default case (when not 1, 2, nor 3) repeats the array_choice. Still within delete element action choice.
-                
-                array_choice = which_array_to_choose();
+            case 2:
+                intersection_of(&array_1, &array_2);
+                break;
 
-                switch (array_choice) {
-                    case 1:
-                        delete_element(&array_1);
-                        goto repeat_operation_choice;
-                    case 2:
-                        delete_element(&array_2);
-                        goto repeat_operation_choice;
-                    case 3:
-                        goto repeat_operation_choice;
-                    default:
-                        break;
+            // Insert
+            case 3:
+                while (true) {
+                    // Case 1, 2, and 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, where 3 skips that action.
+                    // The default case (when not 1, 2, nor 3) it repeates the array_choice. Still within insert element action choice.
+                    
+                    array_choice = which_array_to_choose();
+
+                    switch (array_choice) {
+                        case 1:
+                            insert_element(&array_1);
+                            goto repeat_operation_choice;
+                        case 2:
+                            insert_element(&array_2);
+                            goto repeat_operation_choice;
+                        case 3:
+                            goto repeat_operation_choice;
+                        default:
+                            break;
+                    }
                 }
-            }
-        }
+                break;
 
-        // (5) Print Set
-        else if (operation_choice == 5) {
-            while (true) {
-                // Case 1, 2, 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, while 3 does no actions.
-                // The default case (when not 1, 2, nor 3) repeats the array_choice, but still within the print action choice.
-                
-                array_choice = which_array_to_choose();
+            // Delete
+            case 4:
+                while (true) {
+                    // Case 1, 2, 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, where 3 skips that action.
+                    // The default case (when not 1, 2, nor 3) repeats the array_choice. Still within delete element action choice.
+                    
+                    array_choice = which_array_to_choose();
 
-                switch (array_choice) {
-                    case 1:
-                        print_set(&array_1);
-                        goto repeat_operation_choice;
-                    case 2:
-                        print_set(&array_2);
-                        goto repeat_operation_choice;
-                    case 3:
-                        goto repeat_operation_choice;
-                    default:
-                        break;
+                    switch (array_choice) {
+                        case 1:
+                            delete_element(&array_1);
+                            goto repeat_operation_choice;
+                        case 2:
+                            delete_element(&array_2);
+                            goto repeat_operation_choice;
+                        case 3:
+                            goto repeat_operation_choice;
+                        default:
+                            break;
+                    }
                 }
-            }
-        }
+                break;
 
-        // (6) Equality Check
-            // Make sure to check if the either set has been modified, maybe?
-        if (operation_choice == 6) {
-            equals(&array_1, &array_2);
-        }
-        // TODO
+            // (5) Print Set
+            case 5:
+                while (true) {
+                    // Case 1, 2, 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, while 3 does no actions.
+                    // The default case (when not 1, 2, nor 3) repeats the array_choice, but still within the print action choice.
+                    
+                    array_choice = which_array_to_choose();
 
-        // ELSE 
-        // TODO
+                    switch (array_choice) {
+                        case 1:
+                            print_set(&array_1);
+                            goto repeat_operation_choice;
+                        case 2:
+                            print_set(&array_2);
+                            goto repeat_operation_choice;
+                        case 3:
+                            goto repeat_operation_choice;
+                        default:
+                            break;
+                    }
+                }
+                break;
         
+            case 6:
+                equals(&array_1, &array_2);
+                break;
+
+            case 7:
+                break;
+
+            // ELSE 
+            // TODO
+        }
         repeat_operation_choice:
     }
 
