@@ -108,7 +108,9 @@ main:
             j user_choices_loop
         # Print
         case_5:
-            # TODO
+            operation_choice_print_loop:
+                # array_choice = which_array_to_choose();
+
             j user_choices_loop
         # Equals
         case_6:
@@ -153,6 +155,34 @@ constructor:
         addi $t0, $t0, 1
         j constructor_loop
     constructor_loop_exit:
+
+    jr $ra
+
+
+which_array_to_choose:
+    # Arguments: None
+    # t1 = array_to_modify, t2 = lower bounds, t3 = upper bounds 
+
+    li $t2, 1
+    li $t3, 3
+
+    # printf("Which array would you like to chose.\nFor array one enter 1, for array two, enter 2. And if you would like to go back, enter 3.\n"); 
+    li $v0, 4
+    la $a0, which_array_prompt
+    syscall
+
+    # Get user input for which array they would like to modify.
+    which_array_to_choose_loop
+        li $v0, 5
+        syscall
+        move $t1, $v0
+
+        # Check if within acceptable bounds
+        blt $t1, $t2, which_array_to_choose_loop      # if (t1 < 1) {redo loop}
+        bgt $t1, $t3, which_array_to_choose_loop      # if (t1 > 3) {redo loop}
+
+        # When in the bounds
+        move $v0, $t1
 
     jr $ra
 
