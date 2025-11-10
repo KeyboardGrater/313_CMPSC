@@ -12,12 +12,10 @@ struct IntegerSet {
 // Zeros out the array
 void constructor (struct IntegerSet * set_pointer) {
     int i = 0;
-    const unsigned int ARRAY_SIZE = INTEGERSET_ARRAY_SIZE - 1;
+    const unsigned int LAST_INDEX = INTEGERSET_ARRAY_SIZE - 1;
 
     while (true) {
-        if (i > ARRAY_SIZE) {
-            break;
-        }
+        if (i > LAST_INDEX) {break;}
         set_pointer -> a[i] = 0;
         i = i + 1;
     }
@@ -90,6 +88,8 @@ void delete_element (struct IntegerSet * set_pointer) {
     set_pointer -> a[index] = 0;
 }
 
+// Could combine insert and delete into one, and have 0 or 1 in the argument calls.
+
 void print_set (struct IntegerSet * set_pointer) {
     int i = 0;
     const unsigned int LAST_INDEX_OF_ARRAY = INTEGERSET_ARRAY_SIZE - 1;
@@ -99,7 +99,7 @@ void print_set (struct IntegerSet * set_pointer) {
         if (i > LAST_INDEX_OF_ARRAY) {break;}        // Condition to check if we can exit the loop yet
 
         unsigned int value_at_index = set_pointer -> a[i];
-        printf("%u", value_at_index);                          // Could probally be a byte.
+        printf("%u ", value_at_index);                          // Could probally be a byte.
 
         i = i + 1;                          // iterate through loop
     }
@@ -280,8 +280,6 @@ int main () {
                             goto repeat_operation_choice;
                         case 3:
                             goto repeat_operation_choice;
-                        default:
-                            break;
                     }
                 }
                 break;
@@ -291,17 +289,15 @@ int main () {
                 break;
 
             case 7:
-                break;
-
+                goto exit_loop;
             // ELSE 
-            // TODO
+            default:
+                goto repeat_operation_choice;
         }
         repeat_operation_choice:
     }
-
-
-
-
+    exit_loop:
+    
     return 0;
 }
 
