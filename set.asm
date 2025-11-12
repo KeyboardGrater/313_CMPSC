@@ -7,6 +7,7 @@ INTEGERSET_ARRAY_SIZE = 100                 # enum {INTEGERSET_ARRAY_SIZE = 100}
 # jump tables
 operation_switch: .word case_1, case_2, case_3, case_4, case_5, case_6, case_7
 print_switch: .word ps_1, ps_2, ps_3
+insert_switch: .word in_1, in_2, in_3 
 
 # strings
 operation_prompt: .asciiz "Please pick a operation to perform.\n1: Union of two sets\n2: Intersection of two sets\n3: Insertion on a set\n4: Deletion on a set\n5: Print a set\n6: Check to see if two sets are equal\n7: Exit\n\n"
@@ -59,7 +60,7 @@ main:
 
     # ----------------------------------- User Choice Section --------------------------
     # t1 = operation_choice , t2 = array_choice, t3 = temp, t4 = array_choice_offset
-    # s1 = array_1, s2 = array_2
+    # s1 = array_1, s2 = array_2, s3 = INTEGERSET_ARRAY_SIZE - 1
 
     user_choices_loop:
         # Get user input for what operation they want to do.
@@ -106,8 +107,41 @@ main:
             j user_choices_loop
         # Insert
         case_3:
-            # TODO
-            j user_choices_loop
+            # Case 1, 2, and 3, will all make the operations menu appear again. 1 and 2 does a action beforehand, where 3 skips that action.
+            # The default case (when not 1, 2, nor 3) it repeates the array_choice. Still within insert element action choice.
+
+            # array_choice = which_array_to_choose();
+            jal which_array_to_choose
+            move $t2, $v0
+
+            # switch (array_choice)
+            
+            # Account for zero-indexing
+            addi $t2, $t2, -1
+
+            # Find the location of the array of choice
+            la $t3, insert_switch                     # Base addr of switch statement
+            mul $t4, $t2, 4                           # offset = (choice - 1) * sizeof(int)
+            add $t3, $t3, $t4                         # curr_addr = base_addr + offset
+
+            # Goto case
+            lw $t3, 0($t3)                            # Load jump location into value from address
+            jr $t3
+
+            in_1:
+                # insert_element(&array_1, integerset_array_last_index);
+                move $a0, $s1                         # load array_1_addr into first argument
+                move $a1, $s3                         # load integerset_array_last_index into second argument
+                jal insert_element
+                j user_choices_loop
+            in_2:
+                # insert_element(&array_2);
+                move $a0, $s2
+                move $a1, $s3
+                jal insert_element
+                j user_choices_loop
+            in_3:
+                j user_choices_loop
         # Delete
         case_4:
             # TODO 
@@ -139,7 +173,7 @@ main:
                     # print_set(&array_1);
                     move $a0, $s1                     # load into argument array_1_addr 
                     move $a1, $s3                     # load last_index into arguments
-                    jal print_set                     
+                    jal print_set                                          
                     j user_choices_loop               # Repeat the users operation options
                 ps_2:
                     # print_set(&array_2);
@@ -210,6 +244,7 @@ which_array_to_choose:
         la $a0, which_array_prompt
         syscall
 
+        # scanf("%u", &array_to_modify);
         li $v0, 5
         syscall
         move $t1, $v0
@@ -261,8 +296,87 @@ print_set:
 
     jr $ra
 
+
+number_to_modify:
+    # unsigned int number_to_modify ()
+    # t0 = user_number, # t1 = INTEGERSET_LAST_INDEX
+    # a0 = INTEGERSET_LAST_INDEX
+
+    move $t1, $a0                                     # move INTEGERSET_LAST_INDEX to temp register
+
+    # Get user input, then check to see if user input is within the bounds
+    number_to_modify_loop:
+        # Get user input
+
+        # printf("Please pick a number between 0 - 99\n");
+        li $v0, 4
+        la $a0, number_to_modify_prompt
+        syscall
+
+        # scanf("%i", &user_number);
+        li $v0, 5
+        syscall
+        move $t0, $v0                                 # move the user_input to temp register
+
+        # Check if the number is not within the bound
+        blt $t0, $zero, number_to_modify_loop         # if (user_number < 0) {continue;}
+        bgt $t0, $t1, number_to_modify_loop           # else if (user_number > LAST_INDEX_OF_ARRAY) {continue;}
+
+        # Else (Within the bounds (0 - 99))
+        # else {break;}
+
+    move $v0, $t0                                     # return user_number
+
+    jr $ra
+
+insert_element:
+    # void insert_element (struct IntegerSet * set_pointer, const unsigned int INTEGER_LAST_INDEX)
+    # t0 = index, t1 = temp, $t2 = set_pointer
+    # a0 = arrayX_addr (set_pointer) , a1 = INTEGERSET_LAST_INDEX
+
+    # Call user input function on which element to modify
+
+    # save stuff to stack
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    addi $sp, $sp, -4
+    sw $a0, 0($sp)
+
+
+    # index = number_to_modify(INTEGER_LAST_INDEX);
+    move $a0, $a1
+    jal number_to_modify
+    move $t0, $v0                                     # move return value (user_number) to temp register
+
+    # get the stuff back from the stack
+    
+    lw $t2, 0($sp)
+    addi $sp, $sp, 4
+
+    lw $ra 0($sp)
+    addi $sp, $sp, 4
+
+    # insert element into the array
+
+    # set_pointer -> a[index] = 1;
+    mul $t0, $t0, 4                                   # offset = index * sizeof(int)
+    add $t0, $t2, $t0                                 # curr_addr = base_addr + offset
+    
+    li $t1, 1
+
+    sw $t1, 0($t0)
+
+    jr $ra
+
 # End Program
 # endProgram:
 endProgram:
     li $v0, 10
     syscall
+
+# Stuff I have done so far:
+# Other
+# 
+#    Within user choice:
+#       
