@@ -100,7 +100,11 @@ main:
 
         # Union
         case_1:
-            # TODO
+            # union_of(&array_1, &array_2);
+            move $a0, $s1
+            move $a1, $s2
+            move $a2, $s3
+            jal union_of
             j user_choices_loop
         # Intersection
         case_2:
@@ -443,14 +447,72 @@ delete_element:
 
     jr $ra
 
+union_of:
+    # void union_of(struct IntegerSet * array_1, struct Integer * array_2, const unsigned int LAST_INDEX
+    # a0 = array_1_addr, a1 = array_2_addr, a3 = LAST_INDEX
+    # t0 = 0, t1 = array_1_addr, t2 = array_2_addr, t3 = LAST_INDEX, t4 = offset, t5 = array_1_value, t6 = curr_addr_1, t7 = array_2_value, t8 = curr_addr_2, t9 = temp
+
+    li $t0, 0                                         # int i = 0;
+    move $t1, $a0
+    move $t2, $a1
+    move $t3, $a2
+
+    # struct IntegerSet union_array;
+    li $v0, 9
+    addi $a0, $t3, 1                                  # to get the original array size
+    mul $a0, $a0, 4                                   # Bytes to reserve = ARRAY_SIZE * sizeof(int)
+    syscall
+    move $s4, $v0
+
+    union_of_loop:
+        # Check if we have passed the last index
+        # if (i > LAST_INDEX_OF_ARRAY) {break;}
+        bgt $t0, $t3, union_of_loop_exit
+
+        # Get the values at i
+
+        # Calculate the offset, it should be the same for both of the arrays
+        mul $t4, $t0, 4                               # t4 = i * sizeof(int)
+
+        # unsigned int array_1_value = array_1_pointer -> a[i];
+        add $t6, $t1, $t4                             # curr_addr_1 = array_1_addr + offset
+        lw $t5, 0($t6)
+
+        # unsigned int array_2_value = array_2_pointer -> a[i];
+        add $t8, $t2, $t4                             # curr_addr_2 = array_2_addr + offset
+        lw $t7, 0($t8)
+
+        # union_array.a[i] = array_1_value || array_2_value;
+        or $t9, $t5, $t7                              # t9 = t5 or t7
+
+        # Get address of union to save to, and save it
+        add $t6, $s4, $t4                             # union_curr_addr = union_base_addr + offset
+        sw $t9, 0($t6)
+
+        # increment
+        addi $t0, $t0, 1
+
+        j union_of_loop
+    union_of_loop_exit:
+
+    # Save return register to stack
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Call print function with this union array as the argument
+    # print_set(&union_array, LAST_INDEX);
+    move $a0, $s4
+    move $a1, $t3
+    jal print_set
+    
+    # Get return address back from the stack
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+
+    jr $ra
+
 # End Program
 # endProgram:
 endProgram:
     li $v0, 10
-    syscall
-
-# Stuff I have done so far:
-# Other
-# 
-#    Within user choice:
-#       
+    syscall  
