@@ -8,9 +8,9 @@
 # } SavingsAccount;                         # 4 + 8 + 8 = 20 bytes
 
 # Test Data   
-account_1_interest: .double 0.03
+account_1_annual_interest_rate: .double 0.03
 account_1_balance: .double 2000.00
-account_2_interest: .double 0.03
+account_2_annual_interest_rate: .double 0.03
 account_2_balance: .double 3000.00
 
 account_interest_update: .double 0.04
@@ -32,9 +32,9 @@ main:
     li $t0, 1
     li $t1, 2
     
-    l.d $f0, account_1_interest
+    l.d $f0, account_1_annual_interest_rate
     l.d $f2, account_1_balance
-    l.d $f4, account_2_interest
+    l.d $f4, account_2_annual_interest_rate
     l.d $f6, account_2_balance
 
     # Declare the objects
@@ -69,9 +69,14 @@ main:
     jal new_account
     
 # ------------------------------- Intalization End -------------------------------
+    # s0 = account_1_addr, s1 = account_2_addr
+    
+    # Calculate the monthly interest
+    move $a0, $s0
+    jal calculate_monthly_interest
+
 
     j end_program
-
 
 
 new_account:
@@ -92,6 +97,45 @@ new_account:
     s.d $f2, 12($t0)                        # save the balance to the third segment of the structure (at base_addr + int + double = 0 + 4 + 8 = 12)
 
     jr $ra
+
+
+calculate_monthly_interest:
+    # void calculate_monthly_interest (SavingsAccount * account) {
+    # double interest, balance, annual_interest_rate, monthly_interest
+
+    # arguments: a0 = account
+    # t0 = account_addr, t1 = temp
+    # f0 = interest, f2 = balance, f4 = yearly_inter_rate, f6 = mon_inter, f8 = temp
+
+    
+    # move argument (account address) to temporary register
+    move $t0, $a0
+
+    # get annaul_interest_rate
+    l.d $f0, 4($t0)
+    # get balance
+    l.d $f2, 12($t0)
+
+    # calculate annual_interest = annual_interest_rate * balance
+    mul.d $f0, $f0, $f2
+
+
+    # calculate monthly interest
+    li $t1, 12
+    mtc1.d $t1, $f8
+    cvt.d.w $f8, $f8
+
+    div.d $f6, $f0, $f8
+
+    # calculate the new balance (balance + monthly_interest)
+    add.d $f2, $f2, $f6
+
+    # Save to structure
+    s.d $f2, 12($t0) 
+    
+    # Call print_balance
+    move $a0, $t0                           # load account_X_addr in to argument
+    jal print_balance
 
 # End program
 end_program:
