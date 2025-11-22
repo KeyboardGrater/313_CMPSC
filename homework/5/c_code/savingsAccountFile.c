@@ -8,6 +8,7 @@
 enum {ACCOUNT_ID_MAX_SIZE = 10};
 enum {BALANCE_MAX_SIZE = 10};
 
+
 typedef struct {
     unsigned int account_number;
     double annual_interest_rate;
@@ -174,7 +175,13 @@ int main () {
     // char transaction_file_path [] = "../mips/copy_transactions.txt";
     unsigned const int READ_FILE_AMMOUNT = 256;
     int num_accounts = 0;
+    int i;
 
+    double annual_interest_rate = 0.03;
+
+
+    // --------------- 1. Setting up the accounts --------------- //
+    
     // Open the balance file
     file_pointer = fopen(balance_file_path, "r");
     if (file_pointer == NULL) {
@@ -191,11 +198,20 @@ int main () {
         return 1;
     }
     
-    
     printf("Created %d accounts\n", num_accounts);
 
-    //print_testing_info(account, &num_accounts);
+    // --------------- 2. Set the annaul interest rate fro all of them to 0.03 --------------- 
+    i = 0;
+    while (true) { 
+        if (i >= (num_accounts)) {break;}
+
+        set_interest_rate(account[i], annual_interest_rate);
+
+        i = i + 1;
+    }
     
+    // print_testing_info(account, &num_accounts);
+
     
     return 0;
 }
