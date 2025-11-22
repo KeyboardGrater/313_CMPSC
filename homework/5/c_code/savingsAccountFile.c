@@ -286,7 +286,7 @@ int main () {
     
     printf("Created %d accounts\n", num_accounts);
 
-    // --------------- 2. Set the annaul interest rate fro all of them to 0.03 --------------- 
+    // --------------- 2. Set the annaul interest rate fro all of them to 0.03 --------------- //
     i = 0;
     while (true) { 
         if (i >= (num_accounts)) {break;}
@@ -296,7 +296,7 @@ int main () {
         i = i + 1;
     }
     
-    // --------------- 3. Read the transactions file and modify the account balances ---------------
+    // --------------- 3. Read the transactions file and modify the account balances --------------- //
 
     // Open the transaction file
     file_pointer = fopen(transaction_file_path, "r");
@@ -306,8 +306,21 @@ int main () {
     }
 
     read_transaction_file(file_pointer, account, &num_accounts, READ_FILE_AMMOUNT);
+    if (fclose(file_pointer) != 0) {
+        perror("The transaction file failed to close properly.");
+        return 1;
+    }
 
-    // print_testing_info(account, &num_accounts);
+    // --------------- 4/5. Calculate the monthly inetrest and display the balance after interest is applied --------------- //
+    i = 0; 
+    while (true) {
+        if (i >= num_accounts) {break;}
+
+        calculate_monthly_interest(account[i]);
+
+        i = i + 1;
+    }
+
 
     return 0;
 }
