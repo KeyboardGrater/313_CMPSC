@@ -10,7 +10,6 @@
 
 # Constrants
 READ_FILE_AMMOUNT = 256
-ANNUAL_INTEREST_RATE = 0.03
 
 
 # Array
@@ -29,14 +28,16 @@ str_B: .space READ_FILE_AMMOUNT
 balance_loop_switch: .word bls_0 bls_1
 
 # Paths
-balance_file_path: .asciiz "/home/logan/Documents/classes/313_compsci/homework/5/mips/balance.txt"
-transaction_file_path: .asciiz "/home/logan/Documents/classes/313_compsci/homework/5/mips/copy_transaction.txt"
+balance_file_path: .asciiz ""
+transaction_file_path: .asciiz ""
 
 # Constants continued
 hundred_placed: .double 100.00
+ANNUAL_INTEREST_RATE: .double 0.03
 
 # Messages
 open_balance_error_message: .asciiz "There was a issue when trying to open the balance file"
+open_transaction_error_message: .asciiz "There was a issue when opening the transaction file"
 
 num_created_accounts_message: .asciiz "Accounts Created: "
 
@@ -90,12 +91,15 @@ main:
 
     # --------------- 2. Setting the interest rate --------------- #
     li $t0, 0
+    l.d $f0, ANNUAL_INTEREST_RATE
+    cvt.d.w $f0, $f0
+
     set_interest_rate_loop:
         bge $t0, $s2, set_interest_rate_loop_exit
 
         # Get pointer at account[i]
         mul $t1, $t0, 4
-        add $t1, $s2, $t1
+        add $t1, $s1, $t1
         lw $t1, 0($t1)
 
         # Call set_interest_rate function
@@ -104,7 +108,58 @@ main:
 
         addi $t0, $t0, 1
         j set_interest_rate_loop
+        set_interest_rate_loop_exit:
 
+    # --------------- 3. Add Transactions --------------- #
+
+    # Open the transaction file
+    li $v0, 13
+    la $a0, transaction_file_path
+    la $a1, 0
+    la $a2, 0
+    syscall
+    move $s0, $v0                           # Save the file pointer
+
+    # Check to see if the file opened correctly
+    blt $s0, $zero, open_transaction_error
+
+    # read_transaction_file(file_pointer, account, &num_accounts, READ_FILE_AMMOUNT);
+    move $a0, $s0                           # file pointer
+    move $a1, $s1                           # array of accounts
+    move $a2, $s2                           # num_accounts
+    jal read_transaction_file
+
+    # Close the transaction file
+    li $v0, 16
+    move $a0, $s0
+    syscall
+
+    # --------------- 4/5. Calculate the monthly inetrest and display the balance after interest is applied --------------- #
+    li $t0, 0                               # i = 0
+    
+    calculate_interest_loop:
+        bge $t0, $s2, calculate_interest_done   # if i >= num_accounts, exit
+        
+        # Get account[i] pointer
+        sll $t1, $t0, 2                         # t1 = i * 4
+        add $t1, $s1, $t1                       # t1 = account + (i * 4)
+        lw $a0, 0($t1)                          # a0 = account[i]
+        
+        # Call calculate_monthly_interest(account[i])
+        jal calculate_monthly_interest
+        
+        addi $t0, $t0, 1                        # i++
+        j calculate_interest_loop
+        
+    calculate_interest_done:
+        
+        # Restore return address and exit
+        lw $ra, 0($sp)
+        addi $sp, $sp, 4
+        
+        li $v0, 10                              
+        syscall
+    
     j end_program
 
 new_account:
@@ -543,6 +598,264 @@ balance_cc_ne_nl_skip:
     
     jr $ra
 
+look_up_account:
+    # Arguments: a0 = account array, a1 = account_id_looking_up, a2 = num_accounts
+    # t0 = i, t1 = temp address, t2 = account pointer, t3 = account_number
+    
+    li $t0, 0                               # i = 0
+    
+lookup_loop:
+    # if (i == num_accounts) break
+    beq $t0, $a2, lookup_not_found
+    
+    # Get account[i] pointer
+    sll $t1, $t0, 2                         # t1 = i * 4
+    add $t1, $a0, $t1                       # t1 = account + (i * 4)
+    lw $t2, 0($t1)                          # t2 = account[i]
+    
+    # Get account[i]->account_number
+    lw $t3, 0($t2)                          # t3 = account_number (offset 0)
+    
+    # if (account_id_looking_up == account[i]->account_number)
+    beq $a1, $t3, lookup_found
+    
+    addi $t0, $t0, 1                        # i++
+    j lookup_loop
+    
+lookup_found:
+    move $v0, $t2                           # return account[i]
+    jr $ra
+    
+lookup_not_found:
+    li $v0, 0                               # return NULL
+    jr $ra
+
+
+update_balance:
+    # Arguments: a0 = account pointer, f12 = modification (double)
+    # t0 = account pointer
+    # f0 = current balance, f2 = modification
+    
+    move $t0, $a0
+    mov.d $f2, $f12
+    
+    # Load current balance
+    l.d $f0, 12($t0)                        # savings_balance at offset 12
+    
+    # Add modification
+    add.d $f0, $f0, $f2
+    
+    # Save new balance
+    s.d $f0, 12($t0)
+    
+    jr $ra
+
+
+read_transaction_file:
+    # Arguments: a0 = file descriptor, a1 = account array, a2 = num_accounts
+    # t0 = i, t1 = bytes_read, t2 = current_character, t3 = j
+    # t4 = id_or_transaction, t5 = account_id, t6 = temp
+    # s0 = file descriptor, s1 = account array, s2 = num_accounts
+    
+    # Save registers
+    addi $sp, $sp, -16
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)
+    sw $s1, 8($sp)
+    sw $s2, 12($sp)
+    
+    move $s0, $a0                           # save file descriptor
+    move $s1, $a1                           # save account array
+    move $s2, $a2                           # save num_accounts
+    
+    # Read the file into read_buffer
+    li $v0, 14                              # syscall 14 = read file
+    move $a0, $s0                           # file descriptor
+    la $a1, read_buffer
+    li $a2, READ_FILE_AMMOUNT
+    addi $a2, $a2, -1                       # READ_FILE_AMMOUNT - 1
+    syscall
+    move $t1, $v0                           # t1 = bytes_read
+    
+    # Check if last character is newline, if not add one
+    la $a1, read_buffer
+    addi $t6, $t1, -1                       # bytes_read - 1
+    add $t6, $a1, $t6
+    lb $t2, 0($t6)                          # current_character = read_buffer[bytes_read-1]
+    
+    li $t6, 0x0A
+    beq $t2, $t6, skip_add_newline
+    
+    # Add newline
+    add $t6, $a1, $t1
+    li $t2, 0x0A
+    sb $t2, 0($t6)                          # read_buffer[bytes_read] = 0x0A
+    addi $t1, $t1, 1                        # bytes_read++
+    
+skip_add_newline:
+    # Initialize parsing variables
+    li $t0, 0                               # i = 0
+    li $t3, 0                               # j = 0
+    li $t4, 0                               # id_or_transaction = 0
+    la $a1, read_buffer
+    la $a2, sub_buffer
+    la $a3, temp_buffer
+    
+parse_transaction_loop:
+    # if (i == bytes_read) break
+    beq $t0, $t1, parse_transaction_done
+    
+    # current_character = read_buffer[i]
+    add $t6, $a1, $t0
+    lb $t2, 0($t6)
+    
+    # if (current_character == 0x0A)
+    li $t6, 0x0A
+    bne $t2, $t6, transaction_not_newline
+    
+    # Character is newline
+    # sub_buffer[j] = 0x00
+    add $t6, $a2, $t3
+    sb $zero, 0($t6)
+    li $t3, 0                               # j = 0
+    
+    # switch(id_or_transaction)
+    beqz $t4, transaction_case_0
+    # else case 1
+    j transaction_case_1
+    
+transaction_case_0:
+    # strcpy(temp_buffer, sub_buffer)
+    addi $sp, $sp, -28
+    sw $t0, 0($sp)
+    sw $t1, 4($sp)
+    sw $t2, 8($sp)
+    sw $t3, 12($sp)
+    sw $t4, 16($sp)
+    sw $a1, 20($sp)
+    sw $a2, 24($sp)
+    
+    move $a0, $a3                           #  temp_buffer
+    move $a1, $a2                           #  sub_buffer
+    jal strcpy
+    
+    lw $t0, 0($sp)
+    lw $t1, 4($sp)
+    lw $t2, 8($sp)
+    lw $t3, 12($sp)
+    lw $t4, 16($sp)
+    lw $a1, 20($sp)
+    lw $a2, 24($sp)
+    addi $sp, $sp, 28
+    
+    # Reload buffer addresses
+    la $a1, read_buffer
+    la $a2, sub_buffer
+    la $a3, temp_buffer
+    
+    li $t4, 1                               # id_or_transaction = 1
+    j transaction_iterator_update
+    
+transaction_case_1:
+    # account_id = atoi(temp_buffer)
+    addi $sp, $sp, -28
+    sw $t0, 0($sp)
+    sw $t1, 4($sp)
+    sw $t2, 8($sp)
+    sw $t3, 12($sp)
+    sw $t4, 16($sp)
+    sw $a1, 20($sp)
+    sw $a2, 24($sp)
+    
+    move $a0, $a3
+    jal atoi
+    move $t5, $v0                           # t5 = account_id
+    
+    # current_account = look_up_account(account, account_id, num_accounts)
+    move $a0, $s1                           # account array
+    move $a1, $t5                           # account_id
+    move $a2, $s2                           # num_accounts
+    jal look_up_account
+    
+    # Check if account found
+    beqz $v0, account_not_found
+    
+    # Account found, store pointer temporarily
+    move $t6, $v0                           # t6 = current_account
+    
+    # modification = strtod(sub_buffer, &double_pointer)
+    lw $a2, 24($sp)                         # restore sub_buffer address
+    move $a0, $a2
+    jal strtod
+    mov.d $f12, $f0                         # f12 = modification
+    
+    # update_balance(current_account, modification)
+    move $a0, $t6                           # current_account
+    jal update_balance
+    
+    # Restore registers
+    lw $t0, 0($sp)
+    lw $t1, 4($sp)
+    lw $t2, 8($sp)
+    lw $t3, 12($sp)
+    lw $t4, 16($sp)
+    lw $a1, 20($sp)
+    lw $a2, 24($sp)
+    addi $sp, $sp, 28
+    
+    # Reload buffer addresses
+    la $a1, read_buffer
+    la $a2, sub_buffer
+    la $a3, temp_buffer
+    
+    li $t4, 0                               # id_or_transaction = 0
+    j transaction_iterator_update
+    
+account_not_found:
+    # Print "No account found"
+    li $v0, 4
+    la $a0, no_account_msg
+    syscall
+    
+    # Restore registers
+    lw $t0, 0($sp)
+    lw $t1, 4($sp)
+    lw $t2, 8($sp)
+    lw $t3, 12($sp)
+    lw $t4, 16($sp)
+    lw $a1, 20($sp)
+    lw $a2, 24($sp)
+    addi $sp, $sp, 28
+    
+    # Reload buffer addresses
+    la $a1, read_buffer
+    la $a2, sub_buffer
+    la $a3, temp_buffer
+    
+    li $t4, 0                               # id_or_transaction = 0
+    j transaction_iterator_update
+    
+transaction_not_newline:
+    # sub_buffer[j] = current_character
+    add $t6, $a2, $t3
+    sb $t2, 0($t6)
+    addi $t3, $t3, 1                        # j++
+    
+transaction_iterator_update:
+    addi $t0, $t0, 1                        # i++
+    j parse_transaction_loop
+    
+parse_transaction_done:
+    # Restore saved registers
+    lw $ra, 0($sp)
+    lw $s0, 4($sp)
+    lw $s1, 8($sp)
+    lw $s2, 12($sp)
+    addi $sp, $sp, 16
+    
+
+    jr $ra
+
 strtod:
     # Arguments: a0 = string (format: "XXX.YY" - always 2 decimal places)
     # Returns: f0 = double value
@@ -634,7 +947,7 @@ strtod:
     div.d $f2, $f2, $f4
     
     # Add integer and decimal parts
-    add.d $f12, $f0, $f2
+    add.d $f0, $f0, $f2
     
     li $v0, 3
     syscall
@@ -705,7 +1018,12 @@ open_balance_error:
     syscall
 
     j end_program
+open_transaction_error:
+    li $v0, 4
+    la $a0, open_transaction_error_message
+    syscall
 
+    j end_program
 
 # End program
 end_program:
